@@ -1,3 +1,4 @@
+#![allow(warnings)]
 use axum::{
     routing::{get, post},
     extract::{State, Form, Query, Path},
@@ -15,7 +16,6 @@ use axum_extra::extract::CookieJar;
 use sqlx::Row;
 
 
-// --- 1. СТРУКТУРИ ТА МОДЕЛІ ---
 
 #[derive(Clone)]
 struct AppState {
