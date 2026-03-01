@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineRust</title>
+    <style>
+        :root {
+            --accent: #e50914;
+            --bg: #141414;
+            --card-bg: #222;
+            --sidebar-bg: #1f1f1f;
+            --text-muted: #bbb;
+        }
+
+        body {
+            background: var(--bg);
+            color: white;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        .user-nav { position: fixed; top: 15px; left: 15px; z-index: 1000; }
+        .user-icon {
+            display: flex; justify-content: center; align-items: center;
+            width: 45px; height: 45px; background: var(--accent); color: white;
+            border-radius: 50%; text-decoration: none; font-size: 1.2rem;
+            box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4); transition: 0.3s;
+        }
+
+        .genre-toggle {
+            position: fixed; top: 15px; right: 15px; z-index: 1000;
+            background: var(--accent); color: white; border: none;
+            width: 45px; height: 45px; border-radius: 12px;
+            cursor: pointer; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; gap: 4px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        .genre-toggle span { width: 22px; height: 3px; background: white; border-radius: 2px; transition: 0.3s; }
+
+        .sidebar {
+            position: fixed; top: 0; right: -300px; width: 280px; height: 100vh;
+            background: var(--sidebar-bg); z-index: 1001;
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 80px 20px 40px; box-shadow: -10px 0 30px rgba(0,0,0,0.5); overflow-y: auto;
+        }
+        .sidebar.active { right: 0; }
+
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(3px);
+            z-index: 999; opacity: 0; visibility: hidden; transition: 0.3s;
+        }
+        .overlay.active { opacity: 1; visibility: visible; }
+
+        .genre-item {
+            display: block; color: var(--text-muted); text-decoration: none; padding: 12px 15px;
+            background: #2a2a2a; border-radius: 8px; margin-bottom: 8px; transition: 0.2s;
+        }
+        .genre-item:hover, .genre-item.active { background: var(--accent); color: white; }
+
+        .hero {
+            height: 55vh; min-height: 400px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background: linear-gradient(rgba(0,0,0,0.7), var(--bg)),
+            url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=2070');
+            background-size: cover; background-position: center; text-align: center; padding: 0 20px;
+        }
+        .hero h1 { font-size: clamp(2.5rem, 10vw, 4.5rem); color: var(--accent); margin: 0; text-transform: uppercase; }
+
+        .search-container { width: 100%; max-width: 650px; margin-top: 30px; }
+        .search-form {
+            display: flex; background: white; border-radius: 30px; padding: 5px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .main-search { flex: 1; padding: 12px 20px; border: none; outline: none; font-size: 1rem; border-radius: 30px; color: #333; }
+        .year-input {
+            width: 75px; border: none; outline: none; background: #f0f0f0; color: #333;
+            padding: 0 10px; font-size: 0.9rem; border-radius: 8px; text-align: center;
+        }
+        .btn-red {
+            background: var(--accent); color: white; border: none;
+            border-radius: 0 30px 30px 0; padding: 0 25px;
+            cursor: pointer; font-weight: bold;
+        }
+
+        .grid {
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 15px; padding: 20px;
+        }
+        @media (min-width: 600px) {
+            .grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 25px; padding: 40px; }
+        }
+
+        .card {
+            background: var(--card-bg); border-radius: 12px; overflow: hidden;
+            transition: 0.3s; position: relative; display: flex; flex-direction: column;
+        }
+        .card:hover { transform: translateY(-8px); box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
+
+        .movie-link { text-decoration: none; color: inherit; }
+        .movie-link img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
+
+        .movie-info { padding: 15px; text-align: center; flex-grow: 1; }
+        .movie-info h4 { margin: 0; font-size: 0.95rem; line-height: 1.2; }
+
+        .heart-btn {
+            position: absolute; top: 10px; right: 10px; z-index: 10;
+            background: rgba(0,0,0,0.6); border: none; color: white;
+            width: 35px; height: 35px; border-radius: 50%; cursor: pointer;
+        }
+
+        .pagination { padding: 40px 20px; display: flex; justify-content: center; align-items: center; gap: 20px; }
+        .page-btn {
+            background: #333; color: white; text-decoration: none;
+            padding: 10px 25px; border-radius: 25px; transition: 0.3s; font-weight: bold;
+        }
+        .page-btn:hover { background: var(--accent); }
+    </style>
+
+
+</head>
+<body>
+
+<div class="user-nav">
+    <a href="{% if is_logged_in %}/profile{% else %}/auth{% endif %}" class="user-icon">👤</a>
+</div>
+
+<button class="genre-toggle" onclick="toggleSidebar()">
+    <span></span><span></span><span></span>
+</button>
+
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
+    <h2 style="border-left: 4px solid var(--accent); padding-left: 15px; margin-bottom: 25px;">Жанри</h2>
+    <div class="genre-list">
+        <a href="/" class="genre-item {% if current_genre == -1 %}active{% endif %}">🔥 Всі фільми</a>
+        {% for genre in all_genres %}
+        <a href="/?genre={{ genre.id }}" class="genre-item {% if current_genre == genre.id %}active{% endif %}">
+            {{ genre.name }}
+        </a>
+        {% endfor %}
+    </div>
+</aside>
+
+<div class="hero">
+    <h1>CINE RUST</h1>
+    <p style="opacity: 0.8;">Твій персональний кінозал на базі Rust</p>
+
+    <div class="search-container">
+        <form id="searchForm" class="search-form" action="/" method="get">
+            <input type="hidden" name="genre" value="{{ current_genre }}">
+            <input type="text" name="query" class="main-search" placeholder="Почніть писати назву..." value="{{ search_query }}" autocomplete="off">
+            <input type="text" name="year" class="year-input" placeholder="Рік" value="{{ current_year }}">
+            <button type="submit" class="btn-red">ШУКАТИ</button>
+        </form>
+    </div>
+
+</div>
+
+<div class="grid">
+    {% for movie in movies %}
+    <div class="card">
+        {% if is_logged_in %}
+        <form action="/add_favorite" method="post">
+            <input type="hidden" name="movie_id" value="{{ movie.id }}">
+            <input type="hidden" name="movie_title" value="{{ movie.title }}">
+            <input type="hidden" name="poster_path" value="{% if let Some(path) = movie.poster_path %}{{ path }}{% endif %}">
+            <button type="submit" class="heart-btn">❤️</button>
+        </form>
+        {% else %}
+        <a href="/auth" class="heart-btn" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">❤️</a>
+        {% endif %}
+
+        <a href="/movie/{{ movie.id }}" class="movie-link">
+            {% if let Some(path) = movie.poster_path %}
+            <img src="https://image.tmdb.org/t/p/w500{{ path }}" alt="{{ movie.title }}" loading="lazy">
+            {% else %}
+            <div style="aspect-ratio: 2/3; background: #333; display: flex; align-items: center; justify-content: center;">🎬</div>
+            {% endif %}
+        </a>
+
+        <div class="movie-info">
+            <h4>{{ movie.title }}</h4>
+        </div>
+    </div>
+    {% endfor %}
+
+
+</div>
+
+<div class="pagination">
+    {% if current_page > 1 %}
+    <a href="/?page={{ current_page - 1 }}&query={{ search_query }}&genre={{ current_genre }}" class="page-btn">⬅️ Назад</a>
+    {% endif %}
+    <span style="font-weight: bold;">{{ current_page }}</span>
+    <a href="/?page={{ current_page + 1 }}&query={{ search_query }}&genre={{ current_genre }}" class="page-btn">Вперед ➡️</a>
+</div>
+
+<script>
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('active');
+    }
+
+    let searchTimer;
+    const searchInput = document.querySelector('.main-search');
+    searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+            if (searchInput.value.length > 2 || searchInput.value.length === 0) {
+                document.getElementById('searchForm').submit();
+            }
+        }, 800);
+    });
+</script>
+
+</body>
+</html>
