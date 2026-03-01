@@ -72,14 +72,31 @@
 
     input {
       width: 100%;
-      padding: 14px 16px;
+      height: 50px; /* Фіксована висота, щоб дата не була меншою за текст */
+      padding: 0 16px; /* Відступи тільки по боках */
       margin: 8px 0;
       border-radius: 8px;
       border: 1px solid #333;
       background: #2a2a2a;
       color: white;
       font-size: 1rem;
+      appearance: none; /* Прибирає системні стилі iOS/Android */
+      -webkit-appearance: none;
+      display: block;
     }
+
+    /* Спеціальний фікс для поля дати */
+    input[type="date"] {
+      font-family: inherit; /* Щоб шрифт не мінявся на системний */
+      line-height: 50px; /* Вирівнює текст по центру висоти */
+    }
+
+    /* Щоб іконка календаря в Chrome/Android була білою або не ламала розмір */
+    ::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      cursor: pointer;
+    }
+
 
     input:focus {
       outline: none;
