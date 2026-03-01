@@ -689,11 +689,21 @@ async fn profile_handler(cookies: Cookies, State(state): State<AppState>) -> imp
     };
 
     // 5. Списки фільмів
-    let favorites = sqlx::query_as!(FavoriteMovie, "SELECT movie_id, movie_title, poster_path FROM favorites WHERE user_username = $1", username)
-        .fetch_all(&state.db).await.unwrap_or_default();
+    let favorites = sqlx::query_as::<_, FavoriteMovie>(
+        "SELECT movie_id, movie_title, poster_path FROM favorites WHERE user_username = $1"
+    )
+        .bind(&username)
+        .fetch_all(&state.db)
+        .await
+        .unwrap_or_default();
 
-    let watchlist = sqlx::query_as!(FavoriteMovie, "SELECT movie_id, movie_title, poster_path FROM watchlist WHERE user_username = $1", username)
-        .fetch_all(&state.db).await.unwrap_or_default();
+    let watchlist = sqlx::query_as::<_, FavoriteMovie>(
+        "SELECT movie_id, movie_title, poster_path FROM watchlist WHERE user_username = $1"
+    )
+        .bind(&username)
+        .fetch_all(&state.db)
+        .await
+        .unwrap_or_default();
 
     // 6. Рендеринг
     let template = ProfileTemplate {
