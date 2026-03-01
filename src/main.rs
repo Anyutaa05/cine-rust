@@ -554,13 +554,18 @@ async fn home_handler(
         current_page,
     };
 
+    // Знайти в кінці home_handler:
     match template.render() {
-        Ok(html) => Html(html).into_response(),
+        Ok(html) => (
+            [(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")],
+            Html(html)
+        ).into_response(),
         Err(e) => {
             eprintln!("Template Error: {}", e);
             (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "Помилка сервера").into_response()
         }
     }
+
 }
 
 async fn movie_details_handler(
@@ -606,12 +611,16 @@ async fn movie_details_handler(
         false
     };
 
-    Html(MovieTemplate {
-        movie,
-        is_logged_in,
-        comments,
-        is_admin,
-    }.render().unwrap()).into_response()
+    // В кінці movie_details_handler:
+    (
+        [(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")],
+        Html(MovieTemplate {
+            movie,
+            is_logged_in,
+            comments,
+            is_admin,
+        }.render().unwrap())
+    ).into_response()
 
 
 }
@@ -716,7 +725,12 @@ async fn profile_handler(cookies: Cookies, State(state): State<AppState>) -> imp
         status_phrase: status_phrase.to_string(),
     };
 
-    Html(template.render().unwrap()).into_response()
+    // В кінці profile_handler:
+    (
+        [(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")],
+        Html(template.render().unwrap())
+    ).into_response()
+
 }
 
 
