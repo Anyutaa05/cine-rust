@@ -260,6 +260,17 @@ async fn main() {
         let name: String = col.get("column_name");
         println!("📋 Колонка: {}", name);
     }
+    let _ = sqlx::query(
+        "CREATE TABLE IF NOT EXISTS watched (
+        id SERIAL PRIMARY KEY,
+        user_username TEXT NOT NULL,
+        movie_id INTEGER NOT NULL,
+        runtime INTEGER DEFAULT 0
+    );"
+    ).execute(&pool).await;
+    let _ = sqlx::query(
+        "ALTER TABLE watchlist ADD CONSTRAINT watchlist_unique UNIQUE (user_username, movie_id)"
+    ).execute(&pool).await;
 
     let app = Router::new()
         // --- ГОЛОВНА ТА ПОШУК ---
